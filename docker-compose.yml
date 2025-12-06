@@ -1,0 +1,14 @@
+services:
+  backend:
+    build: ./backend
+    ports: ["${BACKEND_PORT}:${BACKEND_PORT}"]
+    environment:
+      - PORT=${BACKEND_PORT}
+      - DB_URL=${BACKEND_DB_URL}
+      - DB_USERNAME=${BACKEND_DB_USERNAME}
+      - DB_PASSWORD=${BACKEND_DB_PASSWORD}
+  frontend:
+    build: ./frontend
+    ports: ["${FRONTEND_PORT}:${FRONTEND_PORT}"]
+    environment:
+      - PORT=${FRONTEND_PORT}
