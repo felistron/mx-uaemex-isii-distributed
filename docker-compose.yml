@@ -7,6 +7,8 @@ services:
       - DB_URL=${BACKEND_DB_URL}
       - DB_USERNAME=${BACKEND_DB_USERNAME}
       - DB_PASSWORD=${BACKEND_DB_PASSWORD}
+      - JWT_SECRET=${BACKEND_JWT_SECRET}
+      - JWT_EXPIRATION_TIME=${BACKEND_JWT_EXPIRATION_TIME}
   frontend:
     build: ./frontend
     ports: ["${FRONTEND_PORT}:${FRONTEND_PORT}"]

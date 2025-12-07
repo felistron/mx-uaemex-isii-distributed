@@ -1,3 +1,7 @@
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration: ${JWT_EXPIRATION_MS}
 spring:
   application:
     name: backend
