@@ -5,7 +5,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import mx.uaemex.fi.backend.logic.service.CustomUserDetailsService;
 import mx.uaemex.fi.backend.logic.service.JwtService;
@@ -34,9 +33,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(
-            @NonNull HttpServletRequest request,
-            @NonNull HttpServletResponse response,
-            @NonNull FilterChain filterChain
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain
     ) throws ServletException, IOException {
         try {
             var jwt = getJwtFromCookies(request.getCookies());
@@ -68,7 +67,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private String getJwtFromCookies(Cookie[] cookies) {
-        if (cookies == null || cookies.length == 0) return null;
+        if (cookies == null) return null;
         var accessCookie = Arrays.stream(cookies)
                 .filter(cookie -> "access_token".equals(cookie.getName()))
                 .findFirst()

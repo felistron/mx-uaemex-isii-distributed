@@ -18,7 +18,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @NonNull
     @Override
-    public UserDetails loadUserByUsername(@NonNull String username) throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         var empleado = empleadoRepository.findByRfc(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Empleado no encontrado"));
 

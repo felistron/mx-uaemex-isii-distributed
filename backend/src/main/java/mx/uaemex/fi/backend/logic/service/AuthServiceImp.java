@@ -14,8 +14,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Objects;
-
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImp implements AuthService {
@@ -53,7 +51,7 @@ public class AuthServiceImp implements AuthService {
 
         var res = empleadoRepository.save(empleado);
 
-        if (!Objects.isNull(request.esAdministrador()) && request.esAdministrador()) {
+        if (Boolean.TRUE.equals(request.esAdministrador())) {
             var hashedPassword = passwordEncoder.encode(request.password());
 
             var acceso = new Acceso();
