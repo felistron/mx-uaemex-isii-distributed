@@ -2,6 +2,7 @@ app:
   jwt:
     secret: ${JWT_SECRET}
     expiration: ${JWT_EXPIRATION_MS}
+  frontend-url: ${FRONTEND_URL:http://localhost}
 spring:
   application:
     name: backend
@@ -16,5 +17,9 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+  web:
+    error:
+      include-message: always
+      include-binding-errors: always
 server:
   port: ${PORT:8080}
