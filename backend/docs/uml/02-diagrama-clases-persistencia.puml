@@ -1,0 +1,181 @@
+@startuml Diagrama de Clases - Capa de Persistencia
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FEFEFE
+skinparam packageStyle rectangle
+
+title Diagrama de Clases - Capa de Persistencia\nSistema de Nómina UAEMex
+
+package "mx.uaemex.fi.persistence.model" {
+
+    class Empleado <<Entity>> {
+        - id : Integer
+        - rfc : String
+        - nombre : String
+        - apellidos : String
+        - correo : String
+        - acceso : Acceso
+        - nominas : List<Nomina>
+        --
+        + getId() : Integer
+        + setId(id: Integer) : void
+        + getRfc() : String
+        + setRfc(rfc: String) : void
+        + getNombre() : String
+        + setNombre(nombre: String) : void
+        + getApellidos() : String
+        + setApellidos(apellidos: String) : void
+        + getCorreo() : String
+        + setCorreo(correo: String) : void
+        + getAcceso() : Acceso
+        + setAcceso(acceso: Acceso) : void
+        + getNominas() : List<Nomina>
+        + setNominas(nominas: List<Nomina>) : void
+    }
+
+    class Acceso <<Entity>> {
+        - id : Integer
+        - empleado : Empleado
+        - hashedPassword : String
+        --
+        + getId() : Integer
+        + setId(id: Integer) : void
+        + getEmpleado() : Empleado
+        + setEmpleado(empleado: Empleado) : void
+        + getHashedPassword() : String
+        + setHashedPassword(password: String) : void
+    }
+
+    class Nomina <<Entity>> {
+        - id : Integer
+        - salarioBruto : Float
+        - excedenteSobreLimiteInferior : Float
+        - cuotaFija : Float
+        - porcentajeSobreExcedente : Float
+        - periodoInicio : LocalDate
+        - periodoFin : LocalDate
+        - empleado : Empleado
+        --
+        + getId() : Integer
+        + setId(id: Integer) : void
+        + getSalarioBruto() : Float
+        + setSalarioBruto(salario: Float) : void
+        + getExcedenteSobreLimiteInferior() : Float
+        + setExcedenteSobreLimiteInferior(excedente: Float) : void
+        + getCuotaFija() : Float
+        + setCuotaFija(cuota: Float) : void
+        + getPorcentajeSobreExcedente() : Float
+        + setPorcentajeSobreExcedente(porcentaje: Float) : void
+        + getPeriodoInicio() : LocalDate
+        + setPeriodoInicio(fecha: LocalDate) : void
+        + getPeriodoFin() : LocalDate
+        + setPeriodoFin(fecha: LocalDate) : void
+        + getEmpleado() : Empleado
+        + setEmpleado(empleado: Empleado) : void
+    }
+}
+
+package "mx.uaemex.fi.persistence.repository" {
+
+    interface EmpleadoRepository <<Repository>> {
+        + findByRfc(rfc: String) : Empleado
+        + findByCorreo(correo: String) : List<Empleado>
+        + existsByCorreo(correo: String) : boolean
+        + existsByRfc(rfc: String) : boolean
+        --
+        {abstract} Métodos heredados de CrudRepository:
+        + save(entity: Empleado) : Empleado
+        + findById(id: Integer) : Optional<Empleado>
+        + findAll() : Iterable<Empleado>
+        + deleteById(id: Integer) : void
+        + count() : long
+        + existsById(id: Integer) : boolean
+    }
+
+    interface NominaRepository <<Repository>> {
+        --
+        {abstract} Métodos heredados de CrudRepository:
+        + save(entity: Nomina) : Nomina
+        + findById(id: Integer) : Optional<Nomina>
+        + findAll() : Iterable<Nomina>
+        + deleteById(id: Integer) : void
+        + count() : long
+        + existsById(id: Integer) : boolean
+    }
+
+    interface CrudRepository<T,ID> <<Spring Data>> {
+        + save(entity: T) : T
+        + findById(id: ID) : Optional<T>
+        + findAll() : Iterable<T>
+        + deleteById(id: ID) : void
+        + delete(entity: T) : void
+        + count() : long
+        + existsById(id: ID) : boolean
+    }
+}
+
+' Relaciones entre entidades (modelo de dominio)
+Empleado "1" o-- "0..1" Acceso : acceso
+Empleado "1" o-- "0..*" Nomina : nominas
+Nomina "*" --> "1" Empleado : empleado
+
+' Relaciones con repositorios
+EmpleadoRepository ..> Empleado : <<manages>>
+NominaRepository ..> Nomina : <<manages>>
+
+' Herencia de Spring Data
+EmpleadoRepository --|> CrudRepository
+NominaRepository --|> CrudRepository
+
+note top of Empleado
+  **@Entity @Table(name="empleado")**
+  @Builder, @Data, @NoArgsConstructor, @AllArgsConstructor
+
+  Anotaciones JPA:
+  • @Id @GeneratedValue(strategy=IDENTITY)
+  • @Column(unique=true, nullable=false) en RFC y correo
+  • @OneToOne(mappedBy="empleado", cascade=ALL)
+  • @OneToMany(mappedBy="empleado", cascade=ALL)
+end note
+
+note top of Acceso
+  **@Entity @Table(name="acceso")**
+  @Data, @Builder, @AllArgsConstructor, @NoArgsConstructor
+
+  Anotaciones JPA:
+  • @Id @GeneratedValue(strategy=IDENTITY)
+  • @OneToOne @JoinColumn(name="id_empleado")
+  • Solo para empleados con rol administrativo
+end note
+
+note top of Nomina
+  **@Entity @Table(name="nomina")**
+  @Builder, @Data, @NoArgsConstructor, @AllArgsConstructor
+
+  Anotaciones JPA:
+  • @Id @GeneratedValue(strategy=IDENTITY)
+  • @ManyToOne @JoinColumn(name="id_empleado")
+  • Almacena cálculos según tablas ISR 2025
+end note
+
+note right of EmpleadoRepository
+  **Spring Data JPA Repository**
+  Métodos de consulta personalizados
+  basados en convención de nombres
+  (Query Methods)
+end note
+
+legend right
+  |= Símbolo |= Significado |
+  | <<Entity>> | Entidad JPA |
+  | <<Repository>> | Repositorio Spring Data |
+  | <<manages>> | Repositorio gestiona entidad |
+  | o-- | Composición (ciclo de vida dependiente) |
+  | --> | Asociación (referencia) |
+
+  **Patrón:** Repository Pattern
+  **ORM:** Hibernate/JPA
+endlegend
+
+@enduml
+
