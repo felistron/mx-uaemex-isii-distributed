@@ -58,6 +58,13 @@ mx-uaemex-isii-distributed/
 
 ## Inicio Rápido
 
+Clona el repositorio:
+
+```bash
+git clone https://github.com/felistron/mx-uaemex-isii-distributed.git
+cd mx-uaemex-isii-distributed/
+```
+
 ### Opción 1: Docker Compose (Recomendado)
 
 La forma más sencilla de ejecutar todo el sistema:
