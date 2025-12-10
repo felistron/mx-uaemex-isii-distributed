@@ -1,0 +1,90 @@
+@startuml Diagrama Entidad-Relación
+!define ENTITY class
+!define PK_FIELD <b><color:red>
+!define FK_FIELD <color:blue>
+
+' Configuración del diagrama
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FEFEFE
+skinparam class {
+    BackgroundColor White
+    BorderColor Black
+    ArrowColor Black
+}
+
+' Título
+title Diagrama Entidad-Relación\nSistema de Nómina UAEMex
+
+' Entidad Empleado
+ENTITY Empleado {
+    PK_FIELD id : Integer <<PK>>
+    --
+    rfc : String <<UNIQUE, NOT NULL>>
+    nombre : String <<NOT NULL>>
+    apellidos : String <<NOT NULL>>
+    correo : String <<UNIQUE, NOT NULL>>
+}
+
+' Entidad Acceso
+ENTITY Acceso {
+    PK_FIELD id : Integer <<PK>>
+    --
+    FK_FIELD id_empleado : Integer <<FK, UNIQUE, NOT NULL>>
+    hashed_password : String <<NOT NULL>>
+}
+
+' Entidad Nomina
+ENTITY Nomina {
+    PK_FIELD id : Integer <<PK>>
+    --
+    FK_FIELD id_empleado : Integer <<FK, NOT NULL>>
+    salario_bruto : Float <<NOT NULL>>
+    excedente : Float <<NOT NULL>>
+    cuota_fija : Float <<NOT NULL>>
+    porcentaje : Float <<NOT NULL>>
+    periodo_inicio : Date <<NOT NULL>>
+    periodo_fin : Date <<NOT NULL>>
+}
+
+' Relaciones
+Empleado "1" -- "0..1" Acceso : tiene >
+Empleado "1" -- "0..*" Nomina : genera >
+
+note right of Empleado
+  **Entidad Principal**
+  • RFC es clave de negocio
+  • Correo único para login
+  • Relación 1:1 con Acceso (opcional)
+  • Relación 1:N con Nómina
+end note
+
+note left of Acceso
+  **Control de Acceso**
+  • Solo empleados con acceso
+    pueden ser administradores
+  • Password hasheado con BCrypt
+  • Relación 1:1 con Empleado
+end note
+
+note right of Nomina
+  **Registro de Nómina**
+  • Almacena cálculos ISR 2025
+  • Múltiples nóminas por empleado
+  • Período de pago definido
+  • Cálculos según SAT
+end note
+
+legend right
+  |= Color |= Significado |
+  | <color:red>Rojo</color> | Llave Primaria (PK) |
+  | <color:blue>Azul</color> | Llave Foránea (FK) |
+
+  **Cardinalidades:**
+  • 1 : Uno y solo uno
+  • 0..1 : Cero o uno (opcional)
+  • 0..* : Cero o muchos
+  • 1..* : Uno o muchos
+endlegend
+
+@enduml
+

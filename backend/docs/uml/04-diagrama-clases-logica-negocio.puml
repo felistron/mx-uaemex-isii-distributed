@@ -1,0 +1,240 @@
+@startuml Diagrama de Clases - Capa de Lógica de Negocio
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FEFEFE
+skinparam packageStyle rectangle
+
+title Diagrama de Clases - Capa de Lógica de Negocio\nSistema de Nómina UAEMex
+
+package "mx.uaemex.fi.logic.service" <<Folder>> {
+    note as N1
+        Ver diagrama 03-diagrama-clases-servicios.puml
+        para detalles de servicios
+    end note
+}
+
+package "mx.uaemex.fi.logic.validation" {
+
+    ' Anotaciones de Validación Personalizadas
+    annotation ConditionalPassword {
+        + regexp() : String
+        + message() : String
+        + groups() : Class<?>[]
+        + payload() : Class<? extends Payload>[]
+    }
+
+    annotation Periodo {
+        + message() : String
+        + groups() : Class<?>[]
+        + payload() : Class<? extends Payload>[]
+    }
+
+    annotation RFCExists {
+        + message() : String
+        + groups() : Class<?>[]
+        + payload() : Class<? extends Payload>[]
+    }
+
+    annotation UniqueEmail {
+        + message() : String
+        + groups() : Class<?>[]
+        + payload() : Class<? extends Payload>[]
+    }
+
+    annotation UniqueRFC {
+        + message() : String
+        + groups() : Class<?>[]
+        + payload() : Class<? extends Payload>[]
+    }
+
+    ' Validadores Personalizados
+    class ConditionalPasswordValidator <<Validator>> {
+        --
+        + initialize(annotation: ConditionalPassword) : void
+        + isValid(value: RegisterRequest, context: ConstraintValidatorContext) : boolean
+        - isPasswordRequired(esAdmin: Boolean) : boolean
+        - validatePasswordComplexity(password: String, regexp: String) : boolean
+        - validatePasswordConfirmation(password: String, confirm: String) : boolean
+    }
+
+    class PeriodoValidator <<Validator>> {
+        --
+        + initialize(annotation: Periodo) : void
+        + isValid(value: NominaRequest, context: ConstraintValidatorContext) : boolean
+        - validateFechaInicio(fechaInicio: LocalDate, fechaFin: LocalDate) : boolean
+    }
+
+    class RFCExistsValidator <<Validator>> {
+        - empleadoRepository : EmpleadoRepository
+        --
+        + initialize(annotation: RFCExists) : void
+        + isValid(value: String, context: ConstraintValidatorContext) : boolean
+    }
+
+    class UniqueEmailValidator <<Validator>> {
+        - empleadoRepository : EmpleadoRepository
+        --
+        + initialize(annotation: UniqueEmail) : void
+        + isValid(value: String, context: ConstraintValidatorContext) : boolean
+    }
+
+    class UniqueRFCValidator <<Validator>> {
+        - empleadoRepository : EmpleadoRepository
+        --
+        + initialize(annotation: UniqueRFC) : void
+        + isValid(value: String, context: ConstraintValidatorContext) : boolean
+    }
+}
+
+package "mx.uaemex.fi.logic.exception" {
+
+    class InvalidCredentialsException <<Exception>> {
+        --
+        + InvalidCredentialsException(message: String)
+    }
+
+    class NotFoundException <<Exception>> {
+        --
+        + NotFoundException(message: String)
+    }
+
+    class RuntimeException <<Java>> {
+    }
+}
+
+package "jakarta.validation" {
+    interface ConstraintValidator<A,T> <<Bean Validation>> {
+        + initialize(constraintAnnotation: A) : void
+        + isValid(value: T, context: ConstraintValidatorContext) : boolean
+    }
+
+    interface Constraint <<Bean Validation>> {
+        + validatedBy() : Class<?>[]
+    }
+}
+
+package "mx.uaemex.fi.presentation.dto" {
+    class RegisterRequest <<DTO>>
+    class NominaRequest <<DTO>>
+}
+
+package "mx.uaemex.fi.persistence.repository" {
+    interface EmpleadoRepository <<Repository>>
+}
+
+' Relaciones de Anotaciones con Validadores
+ConditionalPassword ..> ConditionalPasswordValidator : validatedBy
+Periodo ..> PeriodoValidator : validatedBy
+RFCExists ..> RFCExistsValidator : validatedBy
+UniqueEmail ..> UniqueEmailValidator : validatedBy
+UniqueRFC ..> UniqueRFCValidator : validatedBy
+
+' Implementación de ConstraintValidator
+ConditionalPasswordValidator ..|> ConstraintValidator
+PeriodoValidator ..|> ConstraintValidator
+RFCExistsValidator ..|> ConstraintValidator
+UniqueEmailValidator ..|> ConstraintValidator
+UniqueRFCValidator ..|> ConstraintValidator
+
+' Las anotaciones implementan Constraint
+ConditionalPassword ..|> Constraint
+Periodo ..|> Constraint
+RFCExists ..|> Constraint
+UniqueEmail ..|> Constraint
+UniqueRFC ..|> Constraint
+
+' Dependencias de validadores
+ConditionalPasswordValidator ..> RegisterRequest : valida
+PeriodoValidator ..> NominaRequest : valida
+RFCExistsValidator --> EmpleadoRepository : consulta
+UniqueEmailValidator --> EmpleadoRepository : consulta
+UniqueRFCValidator --> EmpleadoRepository : consulta
+
+' Excepciones
+InvalidCredentialsException --|> RuntimeException
+NotFoundException --|> RuntimeException
+
+note top of ConditionalPasswordValidator
+  **@Component**
+
+  Validación condicional de contraseña:
+  • Solo obligatoria si esAdministrador=true
+  • Valida complejidad con regex
+  • Valida confirmación de password
+  • Mínimo 12 caracteres
+  • Requiere: mayúsculas, minúsculas,
+    números y caracteres especiales
+end note
+
+note top of PeriodoValidator
+  **@Component**
+
+  Validación de período de nómina:
+  • fechaInicio debe ser anterior a fechaFin
+  • Ambas fechas deben estar presentes
+  • Previene inconsistencias en períodos
+end note
+
+note top of RFCExistsValidator
+  **@Component @RequiredArgsConstructor**
+
+  Valida que el RFC exista en BD:
+  • Usado en NominaRequest
+  • Previene nóminas para empleados
+    no registrados
+  • Consulta EmpleadoRepository
+end note
+
+note top of UniqueEmailValidator
+  **@Component @RequiredArgsConstructor**
+
+  Valida unicidad de correo:
+  • Usado en RegisterRequest
+  • Previene duplicados de correo
+  • Consulta EmpleadoRepository
+end note
+
+note top of UniqueRFCValidator
+  **@Component @RequiredArgsConstructor**
+
+  Valida unicidad de RFC:
+  • Usado en RegisterRequest
+  • Previene duplicados de RFC
+  • Consulta EmpleadoRepository
+end note
+
+note right of InvalidCredentialsException
+  **Excepción personalizada**
+
+  Lanzada cuando:
+  • Correo no existe
+  • Contraseña incorrecta
+  • Credenciales inválidas
+end note
+
+note right of NotFoundException
+  **Excepción personalizada**
+
+  Lanzada cuando:
+  • Empleado no encontrado por RFC
+  • Nómina no encontrada por ID
+  • Recurso solicitado no existe
+end note
+
+legend right
+  |= Símbolo |= Significado |
+  | <<Validator>> | Validador Bean Validation |
+  | <<Exception>> | Excepción personalizada |
+  | <<DTO>> | Data Transfer Object |
+  | @Component | Bean Spring |
+  | ..|> | Implementa interfaz |
+  | ..> | Usa/Valida |
+  | --> | Depende de |
+
+  **Framework:** Jakarta Bean Validation 3.0
+  **Integración:** Spring Validation
+  **Patrón:** Strategy Pattern (validadores)
+endlegend
+
+@enduml
+
