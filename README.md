@@ -66,7 +66,7 @@ La forma más sencilla de ejecutar todo el sistema:
 
 ```env
 # Backend
-BACKEND_PORT=8080
+BACKEND_PORT=3000
 BACKEND_DB_URL=jdbc:postgresql://postgres:5432/nomina
 BACKEND_DB_USERNAME=postgres
 BACKEND_DB_PASSWORD=tu-password-seguro
