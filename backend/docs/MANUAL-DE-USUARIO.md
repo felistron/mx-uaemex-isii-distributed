@@ -7,7 +7,12 @@
 
 Este manual describe la **API REST del Backend** del Sistema de Gestión de Nómina de la Universidad Autónoma del Estado de México. Esta API proporciona servicios para gestionar empleados, calcular nóminas y manejar la autenticación del sistema.
 
-**⚠️ Nota Importante:** Este es el módulo backend (API REST) del sistema. Para la interfaz de usuario (frontend), consulte la documentación del módulo frontend cuando esté disponible.
+**💡 Nota Importante:** Este es el módulo backend (API REST) del sistema. Para usuarios finales, se recomienda usar la **interfaz web (frontend)** que consume esta API de manera amigable. Consulte la [documentación del frontend](../../frontend/README.md) para más información.
+
+**¿Para quién es este manual?**
+- ✅ Desarrolladores que desean integrar la API en otras aplicaciones
+- ✅ Administradores de sistemas que necesitan hacer peticiones directas
+- ✅ Personal técnico que requiere entender el funcionamiento de la API
 
 **¿Qué puedo hacer con esta API?**
 - ✅ Registrar nuevos empleados
@@ -39,7 +44,7 @@ Este manual describe la **API REST del Backend** del Sistema de Gestión de Nóm
 **Requisitos básicos:**
 - ✅ Conocimientos básicos de APIs REST
 - ✅ Herramienta para hacer peticiones HTTP (Postman, cURL, Insomnia, etc.)
-- ✅ La URL base de la API (ej: `http://localhost:8080`)
+- ✅ La URL base de la API (ej: `http://localhost:3000`)
 - ✅ Token JWT válido (para endpoints protegidos)
 
 **Herramientas recomendadas:**
@@ -75,7 +80,7 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 #### POST /auth/register - Registrar un nuevo empleado
 
-**URL:** `http://localhost:8080/auth/register`
+**URL:** `http://localhost:3000/auth/register`
 
 **Método:** `POST`
 
@@ -110,7 +115,7 @@ Content-Type: application/json
 
 #### POST /auth/login - Iniciar sesión
 
-**URL:** `http://localhost:8080/auth/login`
+**URL:** `http://localhost:3000/auth/login`
 
 **Método:** `POST`
 
@@ -144,7 +149,7 @@ Content-Type: application/json
 
 #### GET /empleado/ - Obtener todos los empleados
 
-**URL:** `http://localhost:8080/empleado/`
+**URL:** `http://localhost:3000/empleado/`
 
 **Método:** `GET`
 
@@ -177,7 +182,7 @@ Cookie: access_token={tu-token-jwt}
 
 #### GET /empleado/{rfc} - Obtener un empleado por RFC
 
-**URL:** `http://localhost:8080/empleado/PEGJ900101ABC`
+**URL:** `http://localhost:3000/empleado/PEGJ900101ABC`
 
 **Método:** `GET`
 
@@ -206,7 +211,7 @@ Empleado no encontrado
 
 #### GET /nomina/?rfc={rfc} - Obtener nóminas de un empleado
 
-**URL:** `http://localhost:8080/nomina/?rfc=PEGJ900101ABC`
+**URL:** `http://localhost:3000/nomina/?rfc=PEGJ900101ABC`
 
 **Método:** `GET`
 
@@ -243,7 +248,7 @@ Cookie: access_token={tu-token-jwt}
 
 #### POST /nomina/ - Crear una nueva nómina
 
-**URL:** `http://localhost:8080/nomina/`
+**URL:** `http://localhost:3000/nomina/`
 
 **Método:** `POST`
 
@@ -280,7 +285,7 @@ Content-Type: application/json
 
 #### DELETE /nomina/{id} - Eliminar una nómina
 
-**URL:** `http://localhost:8080/nomina/1`
+**URL:** `http://localhost:3000/nomina/1`
 
 **Método:** `DELETE`
 
@@ -303,7 +308,7 @@ Cookie: access_token={tu-token-jwt}
 #### Registrar un empleado
 
 ```bash
-curl -X POST http://localhost:8080/auth/register \
+curl -X POST http://localhost:3000/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "nombre": "JUAN CARLOS",
@@ -317,7 +322,7 @@ curl -X POST http://localhost:8080/auth/register \
 #### Iniciar sesión
 
 ```bash
-curl -X POST http://localhost:8080/auth/login \
+curl -X POST http://localhost:3000/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "correo": "admin@example.com",
@@ -328,14 +333,14 @@ curl -X POST http://localhost:8080/auth/login \
 #### Obtener todos los empleados (con token)
 
 ```bash
-curl -X GET http://localhost:8080/empleado/ \
+curl -X GET http://localhost:3000/empleado/ \
   -H "Cookie: access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
 #### Crear una nómina
 
 ```bash
-curl -X POST http://localhost:8080/nomina/ \
+curl -X POST http://localhost:3000/nomina/ \
   -H "Cookie: access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -473,9 +478,10 @@ El CORS está deshabilitado por defecto. Si necesitas acceder desde un navegador
 
 ## Control de Versiones
 
-| Versión | Fecha      | Cambios Realizados          | Autor              |
-|---------|------------|-----------------------------|--------------------|
-| 1.0     | 09/12/2025 | Creación inicial del manual | Área de Desarrollo |
+| Versión | Fecha      | Cambios Realizados              | Autor              |
+|---------|------------|---------------------------------|--------------------|
+| 1.0     | 09/12/2025 | Creación inicial del manual     | Área de Desarrollo |
+| 2.0     | 09/12/2025 | Se cambió el puerto del backend | Área de Desarrollo |
 
 ---
 

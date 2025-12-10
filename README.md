@@ -1,20 +1,22 @@
 # Sistema de Nómina - Arquitectura Distribuida
 
-Sistema de gestión de nómina implementado con arquitectura distribuida, compuesto por un backend API REST y un frontend (en desarrollo).
+Sistema de gestión de nómina implementado con arquitectura distribuida, compuesto por un backend API REST y un frontend web.
 
 ## Descripción
 
-Este proyecto implementa un sistema completo de gestión de nómina para la Universidad Autónoma del Estado de México, utilizando una arquitectura distribuida que separa el backend (API REST) del frontend (interfaz de usuario).
+Este proyecto implementa un sistema completo de gestión de nómina para la Universidad Autónoma del Estado de México, utilizando una arquitectura distribuida que separa el backend (API REST) del frontend (interfaz de usuario web).
 
 ### Características Principales
 
 - ✅ **Arquitectura Distribuida**: Backend y frontend como módulos independientes
 - ✅ **API REST**: Backend desarrollado con Spring Boot 4.0.0
-- ✅ **Autenticación JWT**: Sistema seguro de autenticación basado en tokens
-- ✅ **Gestión de Empleados**: Registro y consulta de empleados
+- ✅ **Frontend Responsivo**: Aplicación web con HTML5, CSS3, JavaScript y Bootstrap 5
+- ✅ **Autenticación JWT**: Sistema seguro de autenticación basado en tokens y cookies
+- ✅ **Gestión de Empleados**: Registro, consulta y administración de empleados
 - ✅ **Cálculo de Nóminas**: Cálculo automático de ISR, IMSS y salario neto
+- ✅ **Validación de Errores**: Manejo específico de errores de validación por campo
 - ✅ **Base de Datos**: PostgreSQL para producción, H2 para pruebas
-- ✅ **Cobertura de Pruebas**: 99% de cobertura con 226 pruebas unitarias
+- ✅ **Cobertura de Pruebas**: 99% de cobertura con 226 pruebas unitarias en backend
 - ✅ **Contenerización**: Soporte completo para Docker y Docker Compose
 
 ---
@@ -24,18 +26,31 @@ Este proyecto implementa un sistema completo de gestión de nómina para la Univ
 ```
 mx-uaemex-isii-distributed/
 ├── backend/                    # API REST (Spring Boot)
-│   ├── src/                    # Código fuente
+│   ├── src/                    # Código fuente Java
 │   ├── docs/                   # Documentación del backend
+│   │   ├── MANUAL-DE-USUARIO.md
+│   │   ├── README-DOCKER.md
+│   │   ├── RESUMEN-DE-PRUEBAS.md
+│   │   └── uml/                # Diagramas UML
 │   ├── Dockerfile              # Imagen Docker del backend
 │   ├── pom.xml                 # Dependencias Maven
 │   └── README.md               # Documentación detallada del backend
 │
-├── frontend/                   # Aplicación web (En desarrollo)
-│   ├── src/                    # Código fuente
-│   ├── Dockerfile              # Imagen Docker del frontend
-│   └── README.md               # Documentación del frontend
+├── frontend/                   # Aplicación web (HTML + CSS + JS)
+│   ├── src/                    # Código fuente frontend
+│   │   ├── *.html              # 6 páginas HTML
+│   │   ├── css/                # Bootstrap y estilos personalizados
+│   │   └── js/                 # Lógica JavaScript (7 módulos)
+│   ├── Dockerfile              # Imagen Docker del frontend (Nginx)
+│   ├── nginx.conf              # Configuración Nginx
+│   ├── README.md               # Documentación principal
+│   ├── GUIA-RAPIDA.md          # Guía de inicio rápido
+│   ├── FRONTEND-README.md      # Documentación técnica
+│   ├── VALIDACION-ERRORES.md   # Sistema de validación
+│   └── [otros docs].md         # Documentación adicional
 │
 ├── docker-compose.yml          # Orquestación de servicios
+├── .env                        # Variables de entorno
 └── README.md                   # Este archivo
 ```
 
@@ -56,10 +71,10 @@ BACKEND_DB_URL=jdbc:postgresql://postgres:5432/nomina
 BACKEND_DB_USERNAME=postgres
 BACKEND_DB_PASSWORD=tu-password-seguro
 BACKEND_JWT_SECRET=tu-secreto-jwt-super-seguro-de-al-menos-256-bits
-BACKEND_JWT_EXPIRATION_TIME=86400000
+BACKEND_JWT_EXPIRATION_MS=86400000
 
-# Frontend (cuando esté disponible)
-FRONTEND_PORT=3000
+# Frontend
+FRONTEND_PORT=3001
 ```
 
 2. **Iniciar los servicios:**
@@ -75,8 +90,8 @@ docker-compose ps
 ```
 
 4. **Acceder a los servicios:**
-   - **Backend API:** http://localhost:8080
-   - **Frontend:** http://localhost:3000 (cuando esté disponible)
+   - **Backend API:** http://localhost:3000
+   - **Frontend:** http://localhost:3001
 
 ### Opción 2: Desarrollo Local
 
@@ -91,18 +106,30 @@ export JWT_EXPIRATION_MS=86400000
 export DB_URL="jdbc:h2:mem:testdb"
 export DB_USERNAME="sa"
 export DB_PASSWORD=""
-export PORT=8080
+export PORT=3000
 
 # Ejecutar con Maven
 mvn spring-boot:run
 ```
 
-#### Frontend (cuando esté disponible)
+#### Frontend
 
 ```bash
-cd frontend
-# Instrucciones pendientes
+cd frontend/src
+
+# Opción 1: Con Python
+python -m http.server 3001
+
+# Opción 2: Con Node.js
+npx http-server -p 3001
+
+# Opción 3: Con PHP
+php -S localhost:3001
 ```
+
+**Acceder al frontend:** http://localhost:3001
+
+**Nota:** Asegúrate de configurar la URL del backend en `frontend/src/js/config.js` si usas un puerto diferente.
 
 ---
 
@@ -133,9 +160,24 @@ cd frontend
   - Cobertura de código
   - Matriz de pruebas
 
-### Frontend (Próximamente)
+### Frontend (Aplicación Web)
 
-- **[📖 README del Frontend](frontend/README.md)** - Documentación del frontend (en desarrollo)
+- **[📖 README del Frontend](frontend/README.md)** - Resumen y enlaces principales
+- **[🚀 Guía Rápida](frontend/GUIA-RAPIDA.md)** - Inicio rápido paso a paso
+- **[📘 Documentación Técnica](frontend/FRONTEND-README.md)** - Documentación completa
+  - Tecnologías utilizadas
+  - Estructura del proyecto
+  - Funcionalidades detalladas
+  - Configuración y ejecución
+- **[✅ Validación de Errores](frontend/VALIDACION-ERRORES.md)** - Sistema de validación
+  - Manejo de errores 400
+  - Validación por campo
+  - Ejemplos de uso
+- **[📋 Checklist](frontend/CHECKLIST.md)** - Lista de verificación de funcionalidades
+- **[🧪 Datos de Prueba](frontend/DATOS-PRUEBA.md)** - Ejemplos para testing
+- **[⚙️ Configuración](frontend/CONFIGURACION.md)** - Troubleshooting y configuración avanzada
+- **[📦 Inventario](frontend/INVENTARIO.md)** - Lista completa de archivos creados
+- **[📝 Resumen de Implementación](frontend/RESUMEN-IMPLEMENTACION.md)** - Resumen ejecutivo
 
 ---
 
@@ -153,8 +195,14 @@ cd frontend
 - **Maven** - Gestión de dependencias
 - **Docker** - Contenerización
 
-### Frontend (En desarrollo)
-- Tecnologías por definir
+### Frontend
+- **HTML5** - Estructura de páginas
+- **CSS3** - Estilos personalizados
+- **JavaScript (ES6+)** - Lógica de negocio
+- **Bootstrap 5** - Framework CSS (responsivo)
+- **Fetch API** - Comunicación con backend
+- **Nginx** - Servidor web (Docker)
+- **Docker** - Contenerización
 
 ---
 
@@ -168,23 +216,19 @@ cd frontend
 
 #### Empleados (Protegidos)
 - `GET /empleado/` - Listar todos los empleados
-- `GET /empleado/{rfc}` - Obtener empleado por RFC
 
 #### Nóminas (Protegidos)
 - `GET /nomina/?rfc={rfc}` - Listar nóminas de un empleado
 - `POST /nomina/` - Crear nueva nómina
 - `DELETE /nomina/{id}` - Eliminar nómina
 
-**Nota:** Los endpoints protegidos requieren token JWT en el header:
-```
-Authorization: Bearer {token}
-```
+**Nota:** Los endpoints protegidos requieren token JWT. El frontend lo envía automáticamente mediante la cookie `access_token`.
 
 ### Ejemplo de Uso
 
 ```bash
 # 1. Registrar un empleado
-curl -X POST http://localhost:8080/auth/register \
+curl -X POST http://localhost:3000/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "nombre": "JUAN CARLOS",
@@ -195,7 +239,7 @@ curl -X POST http://localhost:8080/auth/register \
   }'
 
 # 2. Iniciar sesión
-curl -X POST http://localhost:8080/auth/login \
+curl -X POST http://localhost:3000/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "correo": "admin@example.com",
@@ -203,8 +247,8 @@ curl -X POST http://localhost:8080/auth/login \
   }'
 
 # 3. Usar el token para crear una nómina
-curl -X POST http://localhost:8080/nomina/ \
-  -H "Authorization: Bearer {tu-token}" \
+curl -X POST http://localhost:3000/nomina/ \
+  -H "Cookie: access_token={tu-token}" \
   -H "Content-Type: application/json" \
   -d '{
     "rfc": "PEGJ900101ABC",
@@ -213,6 +257,36 @@ curl -X POST http://localhost:8080/nomina/ \
     "salario": 15000.00
   }'
 ```
+
+---
+
+## Flujo de Uso del Sistema Completo
+
+### Para Usuarios Finales (Frontend)
+
+1. **Acceder al sistema**: http://localhost:3001 (o el puerto configurado)
+2. **Registrar un empleado administrador**:
+   - Click en "Registrar Empleado"
+   - Llenar formulario completo
+   - Marcar "Es administrador"
+   - Proporcionar contraseña
+3. **Iniciar sesión**:
+   - Ingresar correo y contraseña
+   - El sistema guarda el token JWT en una cookie automáticamente
+4. **Dashboard de administrador**:
+   - Ver lista de empleados
+   - Gestionar nóminas de cada empleado
+5. **Calcular nómina**:
+   - Seleccionar empleado desde dashboard
+   - Ingresar salario y fechas
+   - Ver resultado con desglose automático
+6. **Consultar nóminas**:
+   - Ver historial de nóminas por empleado
+   - Eliminar nóminas si es necesario
+
+### Para Desarrolladores (API Directa)
+
+Ver sección [Ejemplo de Uso](#ejemplo-de-uso) para peticiones directas a la API.
 
 ---
 

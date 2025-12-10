@@ -21,8 +21,8 @@ docker build -t backend-nomina:latest .
 #### Opción A: Con PostgreSQL externo
 
 ```bash
-docker run -d -p 8080:8080 \
-  -e PORT=8080 \
+docker run -d -p 3000:3000 \
+  -e PORT=3000 \
   -e JWT_SECRET=tu-secreto-jwt-super-seguro-de-al-menos-256-bits \
   -e JWT_EXPIRATION_MS=86400000 \
   -e DB_URL=jdbc:postgresql://host.docker.internal:5432/nomina \
@@ -35,8 +35,8 @@ docker run -d -p 8080:8080 \
 #### Opción B: Con H2 en memoria (solo para pruebas)
 
 ```bash
-docker run -d -p 8080:8080 \
-  -e PORT=8080 \
+docker run -d -p 3000:3000 \
+  -e PORT=3000 \
   -e JWT_SECRET=tu-secreto-jwt-super-seguro-de-al-menos-256-bits \
   -e JWT_EXPIRATION_MS=86400000 \
   -e DB_URL=jdbc:h2:mem:testdb \
@@ -51,7 +51,7 @@ docker run -d -p 8080:8080 \
 1. Crear archivo `.env` en el directorio backend:
 
 ```env
-PORT=8080
+PORT=3000
 JWT_SECRET=tu-secreto-jwt-super-seguro-de-al-menos-256-bits
 JWT_EXPIRATION_MS=86400000
 DB_URL=jdbc:postgresql://host.docker.internal:5432/nomina
@@ -62,7 +62,7 @@ DB_PASSWORD=tu-password
 2. Ejecutar el contenedor:
 
 ```bash
-docker run -d -p 8080:8080 \
+docker run -d -p 3000:3000 \
   --env-file .env \
   --name backend-nomina-app \
   backend-nomina:latest
@@ -78,7 +78,7 @@ Deberías ver algo como:
 
 ```
 CONTAINER ID   IMAGE                    COMMAND               CREATED         STATUS         PORTS                    NAMES
-abc123def456   backend-nomina:latest    "java -jar app.jar"   10 seconds ago  Up 9 seconds   0.0.0.0:8080->8080/tcp   backend-nomina-app
+abc123def456   backend-nomina:latest    "java -jar app.jar"   10 seconds ago  Up 9 seconds   0.0.0.0:3000->3000/tcp   backend-nomina-app
 ```
 
 ### 4. Ver los logs de la aplicación
@@ -92,16 +92,13 @@ docker logs -f backend-nomina-app
 
 ### 5. Probar la API
 
-La API REST estará disponible en: `http://localhost:8080`
+La API REST estará disponible en: `http://localhost:3000`
 
 Prueba con:
 
 ```bash
-# Salud del servicio (si tienes un endpoint de health)
-curl http://localhost:8080/actuator/health
-
-# O intenta registrar un usuario
-curl -X POST http://localhost:8080/auth/register \
+# intenta registrar un usuario
+curl -X POST http://localhost:3000/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "nombre": "JUAN CARLOS",
@@ -129,7 +126,7 @@ docker rm -f backend-nomina-app
 
 ## Despliegue con Docker Compose (Recomendado)
 
-Para desplegar el backend junto con el frontend y una base de datos PostgreSQL, usa Docker Compose desde el directorio raíz del proyecto.
+Para desplegar el sistema completo (backend + frontend) junto con una base de datos PostgreSQL, usa Docker Compose desde el directorio raíz del proyecto.
 
 ### 1. Crear archivo .env en la raíz del proyecto
 
@@ -140,10 +137,10 @@ BACKEND_DB_URL=jdbc:postgresql://postgres:5432/nomina
 BACKEND_DB_USERNAME=postgres
 BACKEND_DB_PASSWORD=tu-password-seguro
 BACKEND_JWT_SECRET=tu-secreto-jwt-super-seguro-de-al-menos-256-bits
-BACKEND_JWT_EXPIRATION_TIME=86400000
+BACKEND_JWT_EXPIRATION_MS=86400000
 
-# Frontend (cuando esté listo)
-FRONTEND_PORT=3000
+# Frontend
+FRONTEND_PORT=3001
 
 # PostgreSQL
 POSTGRES_DB=nomina
@@ -165,7 +162,14 @@ docker-compose up -d
 docker-compose ps
 ```
 
-### 4. Ver logs
+Deberías ver los servicios backend y frontend corriendo.
+
+### 4. Acceder a los servicios
+
+- **Backend API:** http://localhost:3000
+- **Frontend:** http://localhost:3001
+
+### 5. Ver logs
 
 ```bash
 # Logs de todos los servicios
@@ -174,11 +178,14 @@ docker-compose logs
 # Solo del backend
 docker-compose logs backend
 
+# Solo del frontend
+docker-compose logs frontend
+
 # Seguir logs en tiempo real
-docker-compose logs -f backend
+docker-compose logs -f
 ```
 
-### 5. Detener los servicios
+### 6. Detener los servicios
 
 ```bash
 # Detener sin eliminar
@@ -204,8 +211,8 @@ docker build -t backend-nomina:latest .
 ### Ejecución con variables en línea (PowerShell)
 
 ```powershell
-docker run -d -p 8080:8080 `
-  -e PORT=8080 `
+docker run -d -p 3000:3000 `
+  -e PORT=3000 `
   -e JWT_SECRET=tu-secreto-jwt-super-seguro-de-al-menos-256-bits `
   -e JWT_EXPIRATION_MS=86400000 `
   -e DB_URL=jdbc:postgresql://host.docker.internal:5432/nomina `
@@ -218,7 +225,7 @@ docker run -d -p 8080:8080 `
 ### Ejecución con archivo .env (PowerShell)
 
 ```powershell
-docker run -d -p 8080:8080 `
+docker run -d -p 3000:3000 `
   --env-file .env `
   --name backend-nomina-app `
   backend-nomina:latest
@@ -272,7 +279,7 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
 
 | Variable              | Descripción                       | Ejemplo                                  | Requerido |
 |-----------------------|-----------------------------------|------------------------------------------|-----------|
-| `PORT`                | Puerto donde escucha el backend   | `8080`                                   | No (8080) |
+| `PORT`                | Puerto donde escucha el backend   | `3000`                                   | No (8080) |
 | `JWT_SECRET`          | Secreto para firma de JWT         | `tu-secreto-seguro-de-256-bits`          | **Sí**    |
 | `JWT_EXPIRATION_MS`   | Tiempo de expiración del JWT (ms) | `86400000` (24 horas)                    | **Sí**    |
 | `DB_URL`              | URL de conexión a base de datos   | `jdbc:postgresql://postgres:5432/nomina` | **Sí**    |
@@ -303,7 +310,7 @@ docker inspect backend-nomina-app | grep -A 20 Env
 
 ```bash
 # Aumentar memoria del contenedor
-docker run -d -p 8080:8080 \
+docker run -d -p 3000:3000 \
   -m 1g \
   --env-file .env \
   --name backend-nomina-app \
@@ -314,7 +321,7 @@ docker run -d -p 8080:8080 \
 
 ```bash
 # Usa un puerto diferente en el host
-docker run -d -p 9090:8080 \
+docker run -d -p 9090:3000 \
   --env-file .env \
   --name backend-nomina-app \
   backend-nomina:latest

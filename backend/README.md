@@ -360,10 +360,10 @@ BACKEND_DB_URL=jdbc:postgresql://postgres:5432/nomina
 BACKEND_DB_USERNAME=postgres
 BACKEND_DB_PASSWORD=tu-password
 BACKEND_JWT_SECRET=tu-secreto-jwt-super-seguro-de-al-menos-256-bits
-BACKEND_JWT_EXPIRATION_TIME=86400000
+BACKEND_JWT_EXPIRATION_MS=86400000
 
-# Frontend (cuando esté listo)
-FRONTEND_PORT=3000
+# Frontend
+FRONTEND_PORT=3001
 ```
 
 ### Comandos Útiles de Docker
@@ -516,7 +516,7 @@ Set-Cookie: access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Path
 
 ```
 Headers:
-Authorization: Bearer {token}
+Cookie: access_token={token}
 
 Response: 200 OK
 [
@@ -535,7 +535,7 @@ Response: 200 OK
 
 ```
 Headers:
-Authorization: Bearer {token}
+Cookie: access_token={token}
 
 Response: 200 OK
 {
@@ -553,7 +553,7 @@ Response: 200 OK
 
 ```
 Headers:
-Authorization: Bearer {token}
+Cookie: access_token={token}
 
 Response: 200 OK
 [
@@ -575,7 +575,7 @@ Response: 200 OK
 
 ```json
 Headers:
-Authorization: Bearer {token}
+Cookie: access_token={token}
 
 Request Body:
 {
@@ -602,7 +602,7 @@ Response: 200 OK
 
 ```
 Headers:
-Authorization: Bearer {token}
+Cookie: access_token={token}
 
 Response: 204 No Content
 ```
