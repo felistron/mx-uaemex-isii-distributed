@@ -1,0 +1,335 @@
+@startuml Diagrama de Clases - Capa de Presentación
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FEFEFE
+skinparam packageStyle rectangle
+
+title Diagrama de Clases - Capa de Presentación (API REST)\nSistema de Nómina UAEMex - Backend
+
+package "mx.uaemex.fi.backend.presentation.controller" {
+
+    class AuthController <<RestController>> {
+        - authService : AuthService
+        --
+        + register(request: RegisterRequest) : ResponseEntity<EmpleadoResponse>
+        + login(request: LoginRequest) : ResponseEntity<JwtResponse>
+        + handleInvalidCredentials() : ResponseEntity<Void>
+    }
+
+    class EmpleadoController <<RestController>> {
+        - empleadoService : EmpleadoService
+        --
+        + getAllEmpleados() : ResponseEntity<List<EmpleadoResponse>>
+        + getEmpleado(rfc: String) : ResponseEntity<EmpleadoResponse>
+        + handleNotFound() : ResponseEntity<Void>
+    }
+
+    class NominaController <<RestController>> {
+        - nominaService : NominaService
+        --
+        + getAllNominas(rfc: String) : ResponseEntity<List<NominaResponse>>
+        + createNomina(request: NominaRequest) : ResponseEntity<NominaResponse>
+        + deleteNomina(id: Integer) : ResponseEntity<Void>
+    }
+}
+
+package "mx.uaemex.fi.backend.presentation.dto" {
+
+    class RegisterRequest <<Record>> {
+        + rfc : String {UniqueRFC, Pattern, NotNull}
+        + nombre : String {Pattern, NotNull}
+        + apellidos : String {Pattern, NotNull}
+        + correo : String {UniqueEmail, Email, NotNull}
+        + esAdmin : Boolean
+        + password : String
+        + confirmPassword : String
+        --
+        <<ConditionalPassword>>
+    }
+
+    class LoginRequest <<Record>> {
+        + correo : String
+        + password : String
+    }
+
+    class NominaRequest <<Record>> {
+        + rfc : String {RFCExists, NotNull}
+        + salario : Double {DecimalMin, NotNull}
+        + fechaInicio : LocalDate {NotNull}
+        + fechaFin : LocalDate {NotNull}
+        --
+        <<Periodo>>
+    }
+
+    class JwtResponse <<Record>> {
+        + token : String
+        + expiresInMs : Long
+    }
+
+    class EmpleadoResponse <<Record>> {
+        + rfc : String
+        + nombre : String
+        + apellidos : String
+        + correo : String
+        + esAdmin : Boolean
+    }
+
+    class NominaResponse <<Record>> {
+        + id : Integer
+        + rfc : String
+        + fechaInicio : LocalDate
+        + fechaFin : LocalDate
+        + salarioBruto : Double
+        + isr : Double
+        + imss : Double
+        + salarioNeto : Double
+    }
+}
+
+package "mx.uaemex.fi.backend.presentation.filter" {
+
+    class JwtAuthenticationFilter <<Filter>> {
+        - jwtService : JwtService
+        - userDetailsService : CustomUserDetailsService
+        --
+        # shouldNotFilter(request: HttpServletRequest) : boolean
+        # doFilterInternal(request: HttpServletRequest, response: HttpServletResponse, filterChain: FilterChain) : void
+        - getJwtFromCookies(cookies: Cookie[]) : String
+        - getJwtFromAuthorizationHeader(header: String) : String
+    }
+
+    class OncePerRequestFilter <<Spring>> {
+        # shouldNotFilter(request: HttpServletRequest) : boolean
+        # doFilterInternal(request: HttpServletRequest, response: HttpServletResponse, filterChain: FilterChain) : void
+    }
+}
+
+package "mx.uaemex.fi.backend.logic.service" {
+    interface AuthService <<Service>>
+    interface EmpleadoService <<Service>>
+    interface NominaService <<Service>>
+    interface JwtService <<Service>>
+    interface CustomUserDetailsService <<Service>>
+}
+
+package "org.springframework" {
+    interface ResponseEntity <<Spring Web>>
+    interface HttpServletRequest <<Servlet>>
+    interface HttpServletResponse <<Servlet>>
+    interface FilterChain <<Servlet>>
+}
+
+' Relaciones de Controladores con Servicios
+AuthController --> AuthService : usa
+EmpleadoController --> EmpleadoService : usa
+NominaController --> NominaService : usa
+JwtAuthenticationFilter --> JwtService : usa
+JwtAuthenticationFilter --> CustomUserDetailsService : usa
+
+' Relaciones de Controladores con DTOs
+AuthController ..> RegisterRequest : recibe
+AuthController ..> LoginRequest : recibe
+AuthController ..> EmpleadoResponse : retorna
+AuthController ..> JwtResponse : retorna
+
+EmpleadoController ..> EmpleadoResponse : retorna
+
+NominaController ..> NominaRequest : recibe
+NominaController ..> NominaResponse : retorna
+
+' Herencia de filtro
+JwtAuthenticationFilter --|> OncePerRequestFilter
+
+' Uso de APIs Spring
+AuthController ..> ResponseEntity : usa
+EmpleadoController ..> ResponseEntity : usa
+NominaController ..> ResponseEntity : usa
+JwtAuthenticationFilter ..> HttpServletRequest : usa
+JwtAuthenticationFilter ..> HttpServletResponse : usa
+JwtAuthenticationFilter ..> FilterChain : usa
+
+note top of AuthController
+  **@RestController @RequestMapping("/auth")**
+  **@RequiredArgsConstructor**
+
+  Responsabilidades:
+  • Gestión de autenticación REST
+  • Registro de empleados
+  • Login y generación de JWT
+  • Configuración de cookies HttpOnly
+  • Manejo de excepciones
+
+  Endpoints REST:
+  • POST /auth/register
+    - Body: RegisterRequest (JSON)
+    - Response: EmpleadoResponse (200 OK)
+
+  • POST /auth/login
+    - Body: LoginRequest (JSON)
+    - Response: JwtResponse (200 OK)
+    - Headers: Set-Cookie con JWT
+
+  **Endpoints públicos (sin autenticación)**
+end note
+
+note top of EmpleadoController
+  **@RestController @RequestMapping("/empleado")**
+  **@RequiredArgsConstructor**
+
+  Responsabilidades:
+  • API REST de empleados
+  • Consulta de empleados
+  • Manejo de excepciones NotFoundException
+
+  Endpoints REST:
+  • GET /empleado/
+    - Response: List<EmpleadoResponse> (200 OK)
+
+  • GET /empleado/{rfc}
+    - Path Variable: rfc
+    - Response: EmpleadoResponse (200 OK)
+    - Error: 404 Not Found
+
+  **Requiere autenticación JWT**
+  **Header: Authorization: Bearer {token}**
+end note
+
+note top of NominaController
+  **@RestController @RequestMapping("/nomina")**
+  **@RequiredArgsConstructor**
+
+  Responsabilidades:
+  • API REST de nóminas
+  • CRUD de nóminas
+  • Cálculo automático de ISR e IMSS
+  • Validaciones de negocio
+
+  Endpoints REST:
+  • GET /nomina/?rfc={rfc}
+    - Query Param: rfc (requerido)
+    - Response: List<NominaResponse> (200 OK)
+
+  • POST /nomina/
+    - Body: NominaRequest (JSON)
+    - Response: NominaResponse (200 OK)
+
+  • DELETE /nomina/{id}
+    - Path Variable: id
+    - Response: 204 No Content
+
+  **Requiere autenticación JWT**
+  **Header: Authorization: Bearer {token}**
+end note
+
+note top of JwtAuthenticationFilter
+  **@Component @RequiredArgsConstructor**
+  **extends OncePerRequestFilter**
+
+  Responsabilidades:
+  • Interceptar requests HTTP
+  • Extraer JWT de cookies o header Authorization
+  • Validar tokens JWT
+  • Establecer contexto de seguridad Spring
+  • Permitir acceso a endpoints protegidos
+
+  Extracción de JWT:
+  1. Header: Authorization: Bearer {token}
+  2. Cookie: access_token={token}
+
+  Rutas excluidas (públicas):
+  • /auth/register
+  • /auth/login
+  • /error
+
+  **Filtro ejecutado una vez por request**
+end note
+
+note top of RegisterRequest
+  **Java Record (immutable)**
+
+  Validaciones:
+  • @UniqueRFC - RFC único en BD
+  • @UniqueEmail - Correo único en BD
+  • @Pattern - Formato RFC (13 chars)
+  • @Pattern - Nombre/Apellidos (MAYÚSCULAS)
+  • @Email - Formato válido de correo
+  • @ConditionalPassword - Password condicional
+
+  Password requerido solo si esAdmin=true
+  • Mínimo 12 caracteres
+  • Al menos 1 mayúscula, 1 minúscula
+  • Al menos 1 número, 1 carácter especial
+end note
+
+note top of NominaRequest
+  **Java Record (immutable)**
+
+  Validaciones:
+  • @RFCExists - RFC debe existir en BD
+  • @DecimalMin(0.01) - Salario > 0
+  • @NotNull - Todos los campos obligatorios
+  • @Periodo - fechaInicio < fechaFin
+
+  El cálculo de ISR e IMSS se realiza
+  automáticamente por el servicio
+end note
+
+note right of LoginRequest
+  **Java Record (immutable)**
+
+  Campos:
+  • correo: Email del empleado
+  • password: Contraseña
+
+  Validación en servicio
+  (lanza InvalidCredentialsException)
+end note
+
+note right of JwtResponse
+  **Java Record (immutable)**
+
+  Respuesta de login exitoso:
+  • token: JWT válido
+  • expiresInMs: Tiempo de expiración (ms)
+
+  También se envía en cookie HttpOnly
+end note
+
+note right of EmpleadoResponse
+  **Java Record (immutable)**
+
+  DTO de respuesta seguro:
+  • Sin contraseñas
+  • Sin información sensible
+  • Incluye flag esAdmin
+end note
+
+note right of NominaResponse
+  **Java Record (immutable)**
+
+  DTO con cálculos completos:
+  • Datos de nómina
+  • ISR calculado
+  • IMSS calculado
+  • Salario neto final
+end note
+
+legend right
+  |= Símbolo |= Significado |
+  | <<RestController>> | Controlador REST API |
+  | <<Filter>> | Filtro Servlet |
+  | <<Record>> | Java Record (DTO inmutable) |
+  | <<Service>> | Servicio de lógica de negocio |
+  | --> | Usa/Depende de |
+  | ..> | Usa temporalmente |
+  | --|> | Hereda de |
+
+  **Patrón:** REST API
+  **Validación:** Jakarta Bean Validation
+  **Seguridad:** Spring Security + JWT
+  **Formato:** JSON (Request/Response)
+  **Arquitectura:** Distribuida
+endlegend
+
+@enduml
+

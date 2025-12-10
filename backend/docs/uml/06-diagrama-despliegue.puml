@@ -1,0 +1,264 @@
+@startuml Diagrama de Despliegue
+!theme plain
+skinparam backgroundColor #FEFEFE
+
+title Diagrama de Despliegue - Arquitectura Distribuida\nSistema de Gestión de Nómina UAEMex
+
+' Nodos de infraestructura
+node "Cliente (Navegador Web)" as client {
+    artifact "Aplicación Web Frontend" as browser {
+        component "React/Angular/Vue\n(En desarrollo)" as frontend
+        component "HTTP Client" as httpclient
+    }
+}
+
+node "Servidor Backend API" as backendserver {
+    artifact "Spring Boot Backend API" as springboot {
+        component "Tomcat Embebido\n(Puerto 8080)" as tomcat
+
+        package "Backend Application" {
+            component "REST Controllers" as controllers
+            component "Business Logic" as logic
+            component "Data Access Layer" as persistence
+        }
+    }
+
+    artifact "JVM" as jvm {
+        note right
+            Java 17
+            Spring Boot 4.0.0
+        end note
+    }
+}
+
+node "Servidor Frontend" as frontendserver <<optional>> {
+    artifact "Frontend App Server" as frontendapp {
+        component "Node.js/Nginx\n(Puerto 3000)" as webserver
+    }
+}
+
+node "Base de Datos" as dbserver {
+    database "PostgreSQL" as postgres {
+        folder "Schemas" as schemas {
+            storage "empleado" as emp_table
+            storage "acceso" as acc_table
+            storage "nomina" as nom_table
+        }
+    }
+
+    database "H2 Database (Test)" as h2db <<optional>> {
+        folder "In-Memory" as inmemory
+    }
+}
+
+' Docker Compose (Entorno completo)
+node "Docker Compose" as dockercompose <<deployment>> {
+    artifact "Backend Container" as backend_container {
+        component "backend-nomina:latest" as backend_image
+    }
+
+    artifact "Frontend Container" as frontend_container {
+        component "frontend-nomina:latest" as frontend_image
+    }
+
+    artifact "PostgreSQL Container" as postgres_container {
+        component "postgres:latest" as postgres_image
+    }
+}
+
+' Nodo de desarrollo (opcional)
+cloud "Entorno de Desarrollo" as devenv <<optional>> {
+    node "IDE Developer" as ide {
+        component "IntelliJ IDEA\no VS Code" as devide
+    }
+}
+
+' Protocolos y conexiones - Arquitectura Distribuida
+client -down-> frontendserver : "HTTP/HTTPS\n(Puerto 3000)"
+frontendserver -down-> backendserver : "REST API\nHTTP/HTTPS\n(Puerto 8080)"
+httpclient --> tomcat : "REST Requests\n(JSON)"
+tomcat --> controllers : "HTTP Methods\n(GET/POST/DELETE)"
+controllers --> logic : "Service Calls"
+logic --> persistence : "Repository Pattern"
+persistence --> postgres : "JDBC\nHibernate/JPA"
+
+springboot ..> jvm : "<<runs on>>"
+
+' Docker Compose connections
+backend_container ..> postgres_container : "<<connects to>>"
+frontend_container ..> backend_container : "<<consumes API>>"
+
+' Notas adicionales
+note right of client
+    **Cliente Web (Frontend)**
+    • SPA (Single Page Application)
+    • Framework: React/Angular/Vue
+    • Consume API REST del backend
+    • Autenticación: JWT en headers
+    • Navegadores compatibles:
+      - Chrome 100+
+      - Edge 100+
+      - Firefox 100+
+      - Safari 15+
+    • Requiere JavaScript
+end note
+
+note right of backendserver
+    **Servidor Backend (API REST)**
+
+    Especificaciones:
+    • CPU: 2+ cores
+    • RAM: 2GB mínimo (4GB recomendado)
+    • Disco: 500MB
+    • OS: Windows/Linux/MacOS
+    • Puerto: 8080
+
+    Endpoints principales:
+    • POST /auth/register
+    • POST /auth/login
+    • GET /empleado/
+    • GET /empleado/{rfc}
+    • GET /nomina/?rfc={rfc}
+    • POST /nomina/
+    • DELETE /nomina/{id}
+
+    Formato: JSON
+    Autenticación: JWT Bearer Token
+end note
+
+note top of frontendserver
+    **Servidor Frontend**
+    • Puerto: 3000
+    • Sirve aplicación web SPA
+    • Puede usar Nginx o Node.js
+    • Archivos estáticos
+    • Build optimizado para producción
+end note
+
+note bottom of postgres
+    **Base de Datos PostgreSQL**
+    • Modo: Persistente
+    • Puerto: 5432
+    • Driver: org.postgresql.Driver
+    • Dialect: PostgreSQLDialect
+    • DDL: validate (producción)
+
+    **Configuración:**
+    • DB_URL: jdbc:postgresql://host:5432/nomina
+    • DB_USERNAME: postgres
+    • DB_PASSWORD: [configurar]
+end note
+
+note bottom of h2db
+    **H2 (Solo para pruebas)**
+    • Modo: In-Memory
+    • Usado en tests unitarios
+    • DDL: create-drop
+    • No se usa en producción
+end note
+
+note left of dockercompose
+    **Despliegue con Docker Compose**
+
+    Servicios orquestados:
+    1. Backend API (Puerto 8080)
+    2. Frontend Web (Puerto 3000)
+    3. PostgreSQL DB (Puerto 5432)
+
+    Variables de entorno (.env):
+    **Backend:**
+    • BACKEND_PORT=8080
+    • BACKEND_DB_URL
+    • BACKEND_DB_USERNAME
+    • BACKEND_DB_PASSWORD
+    • BACKEND_JWT_SECRET
+    • BACKEND_JWT_EXPIRATION_TIME
+
+    **Frontend:**
+    • FRONTEND_PORT=3000
+    • API_BASE_URL=http://backend:8080
+
+    Comando: docker-compose up -d
+end note
+
+' Configuración
+package "Configuración\nBackend" as config {
+    file "application.yaml" as appconfig
+    file ".env" as envfile
+}
+
+backendserver ..> config : "<<reads>>"
+dockercompose ..> envfile : "<<uses>>"
+
+' Seguridad
+package "Seguridad" as security {
+    component "JWT Tokens" as jwt {
+        note right
+            • Autenticación stateless
+            • Bearer token en header
+            • Expiración: 24h (configurable)
+        end note
+    }
+    component "BCrypt Password" as bcrypt
+    component "Spring Security" as springsec
+    component "CORS Policy" as cors
+}
+
+backendserver ..> security : "<<implements>>"
+
+note right of security
+    **Capa de Seguridad Backend**
+    • Autenticación: JWT Bearer
+    • Contraseñas: BCrypt
+    • Sesiones: Stateless
+    • CORS: Configurado para frontend
+    • Headers seguros
+    • HTTPS (producción)
+end note
+
+' Flujo de comunicación
+note as communication
+    **Flujo de Comunicación:**
+
+    1. Usuario → Frontend: Interacción UI
+    2. Frontend → Backend API: HTTP Request (JSON)
+       - Header: Authorization: Bearer {JWT}
+    3. Backend → PostgreSQL: Query datos
+    4. PostgreSQL → Backend: Resultado
+    5. Backend → Frontend: HTTP Response (JSON)
+    6. Frontend → Usuario: Actualiza UI
+
+    **Arquitectura:** Cliente-Servidor Distribuida
+    **Protocolo:** REST API (JSON)
+    **Autenticación:** JWT en cada request
+end note
+
+' Protocolos
+legend right
+    |= Símbolo |= Significado |
+    | --> | Comunicación/Protocolo |
+    | ..> | Dependencia/Uso |
+    | <<optional>> | Componente opcional |
+    | <<deployment>> | Entorno de despliegue |
+
+    **Arquitectura:** Distribuida
+    **Backend:** Spring Boot 4.0.0 (Java 17)
+    **Frontend:** SPA (En desarrollo)
+    **Base de Datos:** PostgreSQL
+    **Despliegue:** Docker Compose
+    **Formato:** JSON (REST API)
+endlegend
+
+@enduml
+
+    **Protocolos:**
+    • HTTP/HTTPS - Cliente a Servidor
+    • JDBC - Aplicación a Base de Datos
+
+    **Puertos:**
+    • 8080 - Aplicación Spring Boot
+    • H2 Console - /admin/h2-console
+endlegend
+
+@enduml
+

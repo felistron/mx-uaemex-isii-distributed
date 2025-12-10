@@ -1,0 +1,20 @@
+app:
+  jwt:
+    secret: p4zDJcrnZxKJ5iHpsIa3r4AE0P2GAtv0bhfbyrP8vv7UtH223l
+    expiration: 3600000
+spring:
+  application:
+    name: backend
+  datasource:
+    url: jdbc:h2:mem:testdb
+    username: sa
+    password: password
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+server:
+  port: 8080

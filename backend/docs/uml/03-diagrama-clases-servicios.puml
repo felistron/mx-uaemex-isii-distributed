@@ -1,0 +1,238 @@
+@startuml Diagrama de Clases - Capa de Servicios
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FEFEFE
+skinparam packageStyle rectangle
+
+title Diagrama de Clases - Capa de Servicios (Service Layer)\nSistema de Nómina UAEMex
+
+package "mx.uaemex.fi.logic.service" {
+
+    ' Interfaces de Servicio
+    interface AuthService <<Service>> {
+        + login(loginRequest: LoginRequest) : JwtResponse
+        + register(registerRequest: RegisterRequest) : EmpleadoResponse
+    }
+
+    interface EmpleadoService <<Service>> {
+        + buscarPorRFC(rfc: String) : Empleado
+        + obtenerTodos() : List<Empleado>
+    }
+
+    interface NominaService <<Service>> {
+        + generarNomina(request: NominaRequest) : void
+        + eliminarNomina(id: Integer) : void
+        + obtenerNomina(id: Integer) : Nomina
+    }
+
+    interface JwtService <<Service>> {
+        + generateToken(rfc: String) : String
+        + validateToken(token: String) : boolean
+        + getRfcFromToken(token: String) : String
+        + getExpirationTime() : Long
+    }
+
+    interface CalculoNominaService <<Service>> {
+        + calcularCuotaFija(salarioBruto: Float) : Float
+        + calcularExcedente(salarioBruto: Float) : Float
+        + calcularPorcentaje(salarioBruto: Float) : Float
+    }
+
+    ' Implementaciones de Servicio
+    class AuthServiceImp <<ServiceImpl>> {
+        - empleadoRepository : EmpleadoRepository
+        - passwordEncoder : PasswordEncoder
+        - jwtService : JwtService
+        --
+        + login(loginRequest: LoginRequest) : JwtResponse
+        + register(registerRequest: RegisterRequest) : EmpleadoResponse
+    }
+
+    class EmpleadoServiceImp <<ServiceImpl>> {
+        - empleadoRepository : EmpleadoRepository
+        --
+        + buscarPorRFC(rfc: String) : Empleado
+        + obtenerTodos() : List<Empleado>
+    }
+
+    class NominaServiceImp <<ServiceImpl>> {
+        - nominaRepository : NominaRepository
+        - empleadoRepository : EmpleadoRepository
+        - calculoNominaService : CalculoNominaService
+        --
+        + generarNomina(request: NominaRequest) : void
+        + eliminarNomina(id: Integer) : void
+        + obtenerNomina(id: Integer) : Nomina
+    }
+
+    class JwtServiceImp <<ServiceImpl>> {
+        - secretKey : String
+        - jwtExpiration : Long
+        --
+        + generateToken(rfc: String) : String
+        + validateToken(token: String) : boolean
+        + getRfcFromToken(token: String) : String
+        + getExpirationTime() : Long
+        - extractAllClaims(token: String) : Claims
+        - isTokenExpired(token: String) : boolean
+        - buildToken(rfc: String) : String
+    }
+
+    class CalculoNominaService2025 <<ServiceImpl>> {
+        --
+        + calcularCuotaFija(salarioBruto: Float) : Float
+        + calcularExcedente(salarioBruto: Float) : Float
+        + calcularPorcentaje(salarioBruto: Float) : Float
+        - determinarRango(salarioBruto: Float) : int
+        - obtenerLimiteInferior(rango: int) : Float
+    }
+
+    ' Servicios de Seguridad Spring
+    class CustomUserDetailsService <<ServiceImpl>> {
+        - empleadoRepository : EmpleadoRepository
+        --
+        + loadUserByUsername(rfc: String) : UserDetails
+    }
+
+    class UserDetailsAdapter <<Adapter>> {
+        - empleado : Empleado
+        - acceso : Acceso
+        --
+        + getAuthorities() : Collection<GrantedAuthority>
+        + getPassword() : String
+        + getUsername() : String
+        + isAccountNonExpired() : boolean
+        + isAccountNonLocked() : boolean
+        + isCredentialsNonExpired() : boolean
+        + isEnabled() : boolean
+    }
+}
+
+package "org.springframework.security.core.userdetails" {
+    interface UserDetailsService <<Spring Security>> {
+        + loadUserByUsername(username: String) : UserDetails
+    }
+
+    interface UserDetails <<Spring Security>> {
+        + getAuthorities() : Collection<GrantedAuthority>
+        + getPassword() : String
+        + getUsername() : String
+        + isAccountNonExpired() : boolean
+        + isAccountNonLocked() : boolean
+        + isCredentialsNonExpired() : boolean
+        + isEnabled() : boolean
+    }
+}
+
+package "mx.uaemex.fi.persistence" {
+    interface EmpleadoRepository <<Repository>>
+    interface NominaRepository <<Repository>>
+    class Empleado <<Entity>>
+    class Nomina <<Entity>>
+    class Acceso <<Entity>>
+}
+
+package "mx.uaemex.fi.presentation.dto" {
+    class LoginRequest <<DTO>>
+    class RegisterRequest <<DTO>>
+    class JwtResponse <<DTO>>
+    class EmpleadoResponse <<DTO>>
+    class NominaRequest <<DTO>>
+}
+
+' Relaciones de Implementación
+AuthServiceImp ..|> AuthService
+EmpleadoServiceImp ..|> EmpleadoService
+NominaServiceImp ..|> NominaService
+JwtServiceImp ..|> JwtService
+CalculoNominaService2025 ..|> CalculoNominaService
+CustomUserDetailsService ..|> UserDetailsService
+UserDetailsAdapter ..|> UserDetails
+
+' Dependencias entre servicios
+AuthServiceImp --> JwtService : usa
+AuthServiceImp --> EmpleadoRepository : accede
+NominaServiceImp --> CalculoNominaService : usa
+NominaServiceImp --> EmpleadoRepository : accede
+NominaServiceImp --> NominaRepository : accede
+EmpleadoServiceImp --> EmpleadoRepository : accede
+CustomUserDetailsService --> EmpleadoRepository : accede
+CustomUserDetailsService --> UserDetailsAdapter : crea
+UserDetailsAdapter --> Empleado : adapta
+UserDetailsAdapter --> Acceso : usa
+
+' Uso de DTOs
+AuthService ..> LoginRequest : recibe
+AuthService ..> RegisterRequest : recibe
+AuthService ..> JwtResponse : retorna
+AuthService ..> EmpleadoResponse : retorna
+NominaService ..> NominaRequest : recibe
+
+' Uso de Entidades
+EmpleadoService ..> Empleado : retorna
+NominaService ..> Nomina : retorna/gestiona
+
+note top of AuthServiceImp
+  **@Service @RequiredArgsConstructor**
+
+  Responsabilidades:
+  • Autenticación de usuarios
+  • Registro de empleados
+  • Generación de JWT
+  • Encriptación de contraseñas
+end note
+
+note top of NominaServiceImp
+  **@Service @RequiredArgsConstructor**
+
+  Responsabilidades:
+  • Generar registros de nómina
+  • Calcular ISR según SAT 2025
+  • Persistir nóminas
+  • Eliminar nóminas
+end note
+
+note top of CalculoNominaService2025
+  **@Service**
+
+  Implementa tablas ISR 2025:
+  • 11 rangos de salario
+  • Cuotas fijas por rango
+  • Porcentajes sobre excedente
+  • Límites inferiores
+end note
+
+note top of CustomUserDetailsService
+  **@Service @RequiredArgsConstructor**
+
+  Integración con Spring Security:
+  • Carga usuarios por RFC
+  • Valida credenciales
+  • Proporciona UserDetails
+end note
+
+note top of UserDetailsAdapter
+  **Patrón Adapter**
+
+  Adapta modelo de dominio
+  (Empleado + Acceso) a
+  interfaz Spring Security
+  (UserDetails)
+end note
+
+legend right
+  |= Símbolo |= Significado |
+  | <<Service>> | Interfaz de Servicio |
+  | <<ServiceImpl>> | Implementación de Servicio |
+  | <<Adapter>> | Patrón Adapter |
+  | ..|> | Implementa interfaz |
+  | --> | Usa/Depende de |
+  | ..> | Usa temporalmente |
+
+  **Patrón:** Service Layer Pattern
+  **Inyección:** @RequiredArgsConstructor (Lombok)
+  **Transacciones:** @Transactional (implícito en @Service)
+endlegend
+
+@enduml
+
