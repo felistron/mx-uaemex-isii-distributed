@@ -80,6 +80,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (response.ok) {
                 const data = await response.json();
+
+                // Limpiar errores previos
+                clearFieldErrors();
+
                 showAlert('Nómina calculada exitosamente', 'success');
                 displayResultado(data);
 
@@ -92,7 +96,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 setTimeout(() => logout(), 2000);
             } else {
                 const errorData = await response.json().catch(() => ({ message: 'Error al calcular la nómina' }));
-                showAlert(errorData.message || 'Error al calcular la nómina', 'danger');
+
+                // Limpiar errores previos
+                clearFieldErrors();
+
+                // Si es un error 400 con errores de validación
+                if (response.status === 400 && errorData.errors && Array.isArray(errorData.errors)) {
+                    // Mostrar errores específicos por campo
+                    errorData.errors.forEach(error => {
+                        showFieldError(error.field, error.defaultMessage);
+                    });
+
+                    // Mostrar alerta general
+                    showAlert('Por favor, corrija los errores en el formulario', 'danger');
+                } else {
+                    // Error genérico
+                    showAlert(errorData.message || 'Error al calcular la nómina', 'danger');
+                }
             }
         } catch (error) {
             console.error('Error:', error);
@@ -136,6 +156,35 @@ document.addEventListener('DOMContentLoaded', function() {
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         `;
         alertContainer.appendChild(alert);
+    }
+
+    function showFieldError(fieldName, message) {
+        const field = document.getElementById(fieldName);
+        if (!field) return;
+
+        // Agregar clase de error al campo
+        field.classList.add('is-invalid');
+
+        // Crear o actualizar el mensaje de error
+        let errorDiv = field.parentElement.querySelector('.invalid-feedback');
+        if (!errorDiv) {
+            errorDiv = document.createElement('div');
+            errorDiv.className = 'invalid-feedback';
+            field.parentElement.appendChild(errorDiv);
+        }
+        errorDiv.textContent = message;
+    }
+
+    function clearFieldErrors() {
+        // Remover todas las clases de error
+        document.querySelectorAll('.is-invalid').forEach(field => {
+            field.classList.remove('is-invalid');
+        });
+
+        // Remover todos los mensajes de error
+        document.querySelectorAll('.invalid-feedback').forEach(errorDiv => {
+            errorDiv.remove();
+        });
     }
 });
 
